@@ -1,30 +1,33 @@
 import socket
+from cryptography.fernet import Fernet
 
-# Set the host and port for the server
-host = '127.0.0.1'
-port = 12345
+s = socket.socket(socket.AF_INET,
+                socket.SOCK_STREAM)
 
-# Create a socket object
-server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect(('127.0.0.1', 5000))
 
-# Bind the socket to a specific address and port
-server_socket.bind((host, port))
+msg = s.recv(1024)
 
-# Listen for incoming connections
-server_socket.listen()
+while msg:
+    print('Received:' + msg.decode())
+    if msg.decode()[0:3]=='car':
+        with open('filekey.key', 'rb') as filekey:
+                        key = filekey.read()
+                     
+                    # using the generated key
+        fernet = Fernet(key)
+        with open('PIC_encrypted.png', 'rb') as enc_file:
+            encrypted = enc_file.read()
+         
+        # decrypting the file
+        decrypted = fernet.decrypt(encrypted)
+         
+        # opening the file in write mode and
+        # writing the decrypted data
+        with open('new_pic_recieved.png', 'wb') as dec_file:
+            dec_file.write(decrypted)
 
-print(f"Server listening on {host}:{port}")
+    msg = s.recv(1024)
 
-# Accept a connection from a client
-client_socket, client_address = server_socket.accept()
-print(f"Connection from {client_address}")
-
-# Receive data from the client
-while True:
-    data = client_socket.recv(1024).decode('utf-8')
-    if len(data)>0:
-        print(f"Received message: {data}")
-    
-# Close the connection
-client_socket.close()
-server_socket.close()
+# disconnect the client
+#s.close()
